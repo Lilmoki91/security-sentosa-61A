@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#2563eb">
+    <title>Portal Penduduk - Taman Batu Belah 3</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .page { animation: fadeIn .25s ease-out; }
+        .step-no { width: 24px; height: 24px; border-radius: 999px; background: #2563eb; color: #fff; font-size: 12px; font-weight: 800; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .field { width: 100%; padding: .75rem 1rem; background: #f8fafc; border: 2px solid transparent; border-radius: 1rem; font-size: .875rem; }
+        .field:focus { background: #fff; border-color: #3b82f6; outline: none; }
+        .type-btn { padding: .7rem; border-radius: 1rem; font-size: .8rem; font-weight: 600; border: 2px solid #e2e8f0; background: #f8fafc; color: #64748b; }
+        .type-btn.active { border-color: #2563eb; background: #eff6ff; color: #1d4ed8; }
+        .receipt-paper { background: #fff; border: 1px dashed #cbd5e1; border-radius: 1rem; padding: 1.25rem; }
+        .receipt-row { display: flex; justify-content: space-between; gap: 1rem; padding: .45rem 0; border-bottom: 1px dotted #e2e8f0; font-size: .8rem; }
+        .receipt-row span:first-child { color: #64748b; }
+        .receipt-row span:last-child { font-weight: 600; color: #0f172a; text-align: right; }
+
+        @media print {
+            body * { visibility: hidden; }
+            #receiptPaper, #receiptPaper * { visibility: visible; }
+            #receiptPaper { position: absolute; left: 0; top: 0; width: 100%; border: none; }
+            #receiptModal .sheet { max-height: none !important; overflow: visible !important; box-shadow: none; }
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+
+<!-- BOOT -->
+<div id="bootView" class="fixed inset-0 z-[500] flex items-center justify-center bg-gradient-to-br from-blue-600 to-indigo-900 text-white">
+    <i class="fas fa-spinner fa-spin text-3xl"></i>
+</div>
+
+<!-- LOGIN (Gmail) -->
+<div id="loginView" class="fixed inset-0 z-[300] overflow-hidden bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-900 hidden">
+    <div class="absolute -top-20 -right-20 w-64 h-64 rounded-full bg-white/10"></div>
+    <div class="absolute -bottom-24 -left-16 w-72 h-72 rounded-full bg-white/10"></div>
+    <div class="relative h-full flex flex-col items-center justify-center p-4 max-w-md mx-auto">
+        <div class="text-center text-white mb-5 fade-in">
+            <div class="bg-white/20 backdrop-blur w-16 h-16 rounded-3xl flex items-center justify-center mx-auto mb-3 shadow-lg">
+                <i class="fas fa-house-user text-3xl"></i>
+            </div>
+            <h1 class="text-2xl font-extrabold tracking-wide">TAMAN BATU BELAH 3</h1>
+            <p class="text-blue-100 text-sm mt-1">Portal Penduduk</p>
+        </div>
+
+        <div class="bg-white rounded-3xl shadow-2xl p-5 w-full fade-in">
+            <h2 class="text-lg font-bold text-gray-800">Selamat Datang 👋</h2>
+            <p class="text-xs text-gray-500 mt-1 mb-4">Log masuk dengan akaun Gmail anda untuk melihat status bayaran, membayar yuran dan mencetak resit.</p>
+
+            <button id="googleBtn" class="w-full py-3.5 bg-white border-2 border-gray-200 rounded-2xl font-semibold text-gray-700 flex items-center justify-center gap-3 shadow-sm">
+                <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.9 6.1C12.4 13.6 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.2 5.5-4.7 7.2l7.5 5.8c4.4-4.1 7-10.1 7-17.5z"/><path fill="#FBBC05" d="M10.5 28.7A14.5 14.5 0 0 1 9.5 24c0-1.6.3-3.2.9-4.7l-7.9-6.1A24 24 0 0 0 0 24c0 3.9.9 7.5 2.6 10.8l7.9-6.1z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.5-5.8c-2.1 1.4-4.9 2.3-8.4 2.3-6.3 0-11.6-4.1-13.5-9.8l-7.9 6.1C6.5 42.6 14.6 48 24 48z"/></svg>
+                <span id="googleBtnText">Log Masuk dengan Google</span>
+            </button>
+
+            <div id="loginError" class="mt-3 p-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-xs hidden"></div>
+
+            <p class="text-[11px] text-gray-400 text-center mt-4 leading-relaxed">
+                <i class="fas fa-shield-halved mr-1"></i>Kami tidak menyimpan kata laluan anda.<br>
+                Jika dibuka dari WhatsApp, sila buka dalam Chrome / Safari.
+            </p>
+        </div>
+
+        <a href="index.html" class="mt-4 text-xs text-blue-100 font-semibold"><i class="fas fa-user-shield mr-1"></i>Log masuk Admin</a>
+    </div>
+</div>
+
+<!-- REGISTRATION / PROFILE FORM -->
+<div id="regView" class="fixed inset-0 z-[250] overflow-y-auto bg-[#f4f6fb] hidden">
+    <div class="max-w-md mx-auto min-h-full pb-10">
+        <div class="app-header text-white px-5 pt-6 pb-10">
+            <div class="relative z-10">
+                <p class="text-[11px] uppercase tracking-widest text-blue-200 font-semibold" id="regStep">Pendaftaran Penduduk</p>
+                <h1 class="text-xl font-extrabold mt-1">Lengkapkan Butiran Anda</h1>
+                <p class="text-xs text-blue-100 mt-1" id="regEmail"></p>
+            </div>
+        </div>
+
+        <form id="regForm" class="px-4 -mt-5 relative z-10">
+            <div class="bg-white rounded-3xl shadow-lg p-5 space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 mb-1.5">Nama Penuh</label>
+                    <input id="regName" type="text" class="field" placeholder="Seperti dalam IC" autocomplete="name">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1.5">Seksyen</label>
+                        <select id="regSection" class="field">
+                            <option value="">Pilih...</option>
+                            <option value="61A">61A</option>
+                            <option value="61B">61B</option>
+                            <option value="61C">61C</option>
+                            <option value="61D">61D</option>
+                            <option value="61E">61E</option>
+                            <option value="OTHER">Lain²</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1.5">No. Rumah</label>
+                        <input id="regHouse" type="text" class="field" placeholder="cth: 12 / 2A">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 mb-1.5">No. WhatsApp</label>
+                    <div class="relative">
+                        <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-bold text-sm">+60</span>
+                        <input id="regPhone" type="tel" class="field !pl-14" placeholder="123456789" autocomplete="tel-national">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 mb-1.5">Status Penghuni</label>
+                    <div class="grid grid-cols-2 gap-3">
+                        <button type="button" class="type-btn active" data-type="Pemilik"><i class="fas fa-key mr-1"></i>Pemilik</button>
+                        <button type="button" class="type-btn" data-type="Penyewa"><i class="fas fa-user-tag mr-1"></i>Penyewa</button>
+                    </div>
+                </div>
+                <label class="flex items-start gap-2 text-[11px] text-gray-500 leading-relaxed">
+                    <input id="regConsent" type="checkbox" class="mt-0.5">
+                    <span>Saya bersetuju butiran ini disimpan oleh AJK Taman Batu Belah 3 untuk tujuan pengurusan yuran dan resit.</span>
+                </label>
+                <div id="regError" class="p-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-xs hidden"></div>
+                <button id="regSubmit" type="submit" class="w-full py-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold rounded-2xl shadow-lg shadow-blue-500/30">
+                    <i class="fas fa-check mr-2"></i>Simpan & Teruskan
+                </button>
+                <button id="regCancel" type="button" class="hidden w-full py-3 bg-gray-100 text-gray-600 font-semibold rounded-2xl text-sm">Batal</button>
+                <button id="regLogout" type="button" class="w-full text-xs text-gray-400 font-semibold">Guna akaun lain? Log keluar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="appView" class="app-shell hidden">
+
+    <header class="app-header text-white px-4 pt-5 pb-20">
+        <div class="relative z-10 flex items-center justify-between">
+            <div class="flex items-center gap-3 min-w-0">
+                <div id="avatar" class="w-11 h-11 rounded-2xl bg-white/20 flex items-center justify-center font-extrabold text-lg shrink-0 overflow-hidden"></div>
+                <div class="min-w-0">
+                    <p class="text-[11px] text-blue-200">Selamat datang,</p>
+                    <h1 id="hdrName" class="text-sm font-bold leading-tight truncate"></h1>
+                    <p id="hdrHouse" class="text-[11px] text-blue-100"></p>
+                </div>
+            </div>
+            <div class="icon-btn shrink-0"><i class="fas fa-house-user"></i></div>
+        </div>
+    </header>
+
+    <main class="px-4 -mt-14 relative z-10 pb-32">
+
+        <!-- HOME -->
+        <section id="page-home" class="page space-y-4">
+            <div class="stats-card p-5">
+                <div class="flex items-center justify-between">
+                    <p class="text-[11px] uppercase tracking-widest text-gray-400 font-semibold">Yuran <span id="heroPeriod"></span></p>
+                    <span id="heroChip" class="chip chip-none"></span>
+                </div>
+                <p class="text-3xl font-extrabold text-gray-800 mt-2" id="heroAmount">RM0.00</p>
+                <p class="text-xs text-gray-500 mt-1" id="heroNote"></p>
+                <button id="heroBtn" class="mt-4 w-full py-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold rounded-2xl shadow-lg shadow-blue-500/30"></button>
+            </div>
+
+            <div id="pendingBanner" class="hidden bg-amber-50 border border-amber-200 rounded-2xl p-3 text-xs text-amber-800 flex gap-2">
+                <i class="fas fa-hourglass-half mt-0.5"></i>
+                <span>Akaun anda <b>menunggu pengesahan AJK</b>. Butiran rumah akan disemak oleh admin.</span>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div class="bg-white rounded-2xl p-4 shadow-sm">
+                    <div class="text-[10px] text-gray-400 font-semibold tracking-wide">DIBAYAR <span id="sumYear"></span></div>
+                    <div class="text-xl font-extrabold text-green-600 mt-1" id="sumPaid">RM0</div>
+                </div>
+                <div class="bg-white rounded-2xl p-4 shadow-sm">
+                    <div class="text-[10px] text-gray-400 font-semibold tracking-wide">JUMLAH RESIT</div>
+                    <div class="text-xl font-extrabold text-blue-600 mt-1" id="sumReceipts">0</div>
+                </div>
+            </div>
+
+            <div>
+                <div class="flex items-center justify-between mx-1 mb-2">
+                    <h2 class="text-sm font-bold text-gray-800">Bayaran Terkini</h2>
+                    <button class="text-xs text-blue-600 font-semibold" data-goto="receipts">Lihat semua</button>
+                </div>
+                <div id="recentList" class="space-y-2"></div>
+            </div>
+        </section>
+
+        <!-- PAY -->
+        <section id="page-pay" class="page space-y-4 hidden">
+            <div class="bg-white rounded-3xl shadow-lg p-5 space-y-5">
+                <h2 class="text-base font-bold text-gray-800"><i class="fas fa-wallet text-blue-600 mr-2"></i>Bayar Yuran</h2>
+
+                <div>
+                    <div class="flex items-center gap-2 mb-2"><span class="step-no">1</span><span class="text-sm font-semibold text-gray-700">Pilih tempoh & jumlah</span></div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <select id="payMonth" class="field"></select>
+                        <select id="payYear" class="field"></select>
+                    </div>
+                    <div class="relative mt-3">
+                        <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-bold">RM</span>
+                        <input id="payAmount" type="number" inputmode="decimal" min="0" step="0.01" class="field !pl-12 !text-lg !font-bold" placeholder="0.00">
+                    </div>
+                    <div class="flex flex-wrap gap-2 mt-2">
+                        <button type="button" class="pay-chip px-3.5 py-1.5 bg-blue-50 text-blue-700 rounded-full text-xs font-semibold" data-amount="50">RM50</button>
+                        <button type="button" class="pay-chip px-3.5 py-1.5 bg-blue-50 text-blue-700 rounded-full text-xs font-semibold" data-amount="100">RM100</button>
+                        <button type="button" class="pay-chip px-3.5 py-1.5 bg-blue-50 text-blue-700 rounded-full text-xs font-semibold" data-amount="150">RM150</button>
+                        <button type="button" class="pay-chip px-3.5 py-1.5 bg-blue-50 text-blue-700 rounded-full text-xs font-semibold" data-amount="200">RM200</button>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="flex items-center gap-2 mb-2"><span class="step-no">2</span><span class="text-sm font-semibold text-gray-700">Imbas QR Touch 'n Go eWallet</span></div>
+                    <div class="bg-slate-50 rounded-2xl p-4 text-center">
+                        <img id="qrImg" src="https://i.postimg.cc/FHpxJssq/IMG-20250807-105648.jpg" alt="QR Touch n Go eWallet" class="mx-auto rounded-xl max-h-72 object-contain bg-white shadow">
+                        <p id="qrFallback" class="hidden text-xs text-red-500 mt-2">Gambar QR tidak dapat dimuatkan.</p>
+                        <a id="qrOpen" href="https://i.postimg.cc/FHpxJssq/IMG-20250807-105648.jpg" target="_blank" rel="noopener" class="inline-block mt-3 text-xs font-semibold text-blue-600"><i class="fas fa-up-right-from-square mr-1"></i>Buka QR saiz penuh</a>
+                    </div>
+                    <p class="text-[11px] text-gray-500 mt-2 leading-relaxed">Buka aplikasi <b>Touch 'n Go eWallet</b>, imbas QR di atas dan masukkan jumlah yang sama. Pastikan nama penerima ialah akaun persatuan.</p>
+                </div>
+
+                <div>
+                    <div class="flex items-center gap-2 mb-2"><span class="step-no">3</span><span class="text-sm font-semibold text-gray-700">Masukkan no. rujukan transaksi</span></div>
+                    <input id="payRef" type="text" class="field" placeholder="No. rujukan / Transaction ID di TNG">
+                    <p class="text-[11px] text-gray-400 mt-1">Terdapat dalam butiran transaksi selepas bayaran berjaya.</p>
+                </div>
+
+                <div id="payError" class="p-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-xs hidden"></div>
+
+                <button id="paySubmit" class="w-full py-3.5 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold rounded-2xl shadow-lg shadow-green-500/30">
+                    <i class="fas fa-receipt mr-2"></i>Saya Sudah Bayar - Jana Resit
+                </button>
+            </div>
+        </section>
+
+        <!-- RECEIPTS -->
+        <section id="page-receipts" class="page space-y-3 hidden">
+            <div class="bg-white rounded-3xl shadow-lg p-5">
+                <h2 class="text-base font-bold text-gray-800"><i class="fas fa-file-invoice text-blue-600 mr-2"></i>Resit Saya</h2>
+                <p class="text-xs text-gray-500 mt-1">Ketik mana-mana bayaran untuk melihat dan mencetak resit.</p>
+            </div>
+            <div id="receiptList" class="space-y-2"></div>
+        </section>
+
+        <!-- PROFILE -->
+        <section id="page-profile" class="page space-y-4 hidden">
+            <div class="bg-white rounded-3xl shadow-lg p-5">
+                <div class="flex items-center justify-between mb-3">
+                    <h2 class="text-base font-bold text-gray-800"><i class="fas fa-user text-blue-600 mr-2"></i>Profil Saya</h2>
+                    <span id="profStatus" class="chip chip-none"></span>
+                </div>
+                <div id="profileRows"></div>
+                <button id="editProfileBtn" class="mt-4 w-full py-3 bg-blue-50 text-blue-700 font-semibold rounded-2xl text-sm"><i class="fas fa-pen mr-2"></i>Kemaskini Butiran</button>
+                <button id="logoutBtn" class="mt-2 w-full py-3 bg-red-50 text-red-600 font-semibold rounded-2xl text-sm"><i class="fas fa-sign-out-alt mr-2"></i>Log Keluar</button>
+            </div>
+        </section>
+    </main>
+
+    <nav class="bottom-nav">
+        <button class="nav-item active" data-page="home"><i class="fas fa-house"></i><span>Utama</span></button>
+        <button class="nav-item" data-page="pay"><i class="fas fa-qrcode"></i><span>Bayar</span></button>
+        <button class="nav-item" data-page="receipts"><i class="fas fa-receipt"></i><span>Resit</span></button>
+        <button class="nav-item" data-page="profile"><i class="fas fa-user"></i><span>Profil</span></button>
+    </nav>
+</div>
+
+<!-- RECEIPT MODAL -->
+<div id="receiptModal" class="fixed inset-0 z-[100] hidden">
+    <div class="modal-overlay absolute inset-0"></div>
+    <div class="sheet absolute bottom-0 inset-x-0 mx-auto max-w-md bg-white rounded-t-[2rem] max-h-[92vh] overflow-y-auto slide-up">
+        <div class="sticky top-0 bg-white rounded-t-[2rem] px-5 pt-1 pb-2 z-10">
+            <div class="sheet-handle mb-3"></div>
+            <div class="flex items-center justify-between">
+                <h2 class="text-lg font-bold text-gray-800">Resit Bayaran</h2>
+                <button id="closeReceiptBtn" class="w-9 h-9 bg-gray-100 rounded-full"><i class="fas fa-times text-gray-600"></i></button>
+            </div>
+        </div>
+        <div class="px-5 pb-3">
+            <div id="receiptPaper" class="receipt-paper"></div>
+        </div>
+        <div class="sticky bottom-0 bg-white border-t p-4 grid grid-cols-2 gap-2">
+            <button id="printBtn" class="py-3 bg-blue-600 text-white font-semibold rounded-2xl text-sm"><i class="fas fa-print mr-1"></i>Cetak / PDF</button>
+            <button id="shareBtn" class="py-3 bg-green-500 text-white font-semibold rounded-2xl text-sm"><i class="fab fa-whatsapp mr-1"></i>Kongsi</button>
+        </div>
+    </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast" class="fixed top-5 left-1/2 -translate-x-1/2 z-[600] hidden w-[90%] max-w-sm">
+    <div class="bg-gray-900/95 text-white px-5 py-3 rounded-2xl shadow-xl flex items-center gap-3 fade-in">
+        <i class="fas fa-check-circle text-green-400" id="toastIcon"></i>
+        <span id="toastText" class="text-sm font-medium"></span>
+    </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="penduduk.js"></script>
+</body>
+</html>
